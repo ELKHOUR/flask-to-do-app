@@ -1,0 +1,166 @@
+import functools
+
+from flask import Flask, request, redirect, url_for, render_template, session, flash, g
+import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
+
+app = Flask(__name__)
+app.config.from_mapping(
+    SECRET_KEY='MyNew$ecureP@ssw0rd', )
+
+if __name__ == '__main__':
+    app.run()
+
+############### DATA BASE CONECTION ###############
+database = 'blog.db'
+def get_db():
+    db = sqlite3.connect(database)
+    db.row_factory = sqlite3.Row
+    return db
+
+
+
+
+############## DECORATOR ######################3
+def login_required(func):
+    @functools.wraps(func)
+    def wrapped_func(**kwargs):
+        if g.user is None:
+            return redirect(url_for('login'))
+        return func(**kwargs)
+    return wrapped_func
+
+
+
+
+
+
+######################## HOME PAGE ##############################
+@app.route('/')
+def posts():
+    db = get_db()
+    posts = db.execute('SELECT * FROM posts').fetchall()
+    db.close()
+    return render_template('posts.html', posts=posts)
+
+
+
+
+
+########################### SHOW ONE POST ########################
+@app.route('/post/<int:id>')
+def post(id):
+    db = get_db()
+    post = db.execute('SELECT * FROM posts WHERE id=?', (id,)).fetchone()
+    db.close()
+    return  render_template('post.html', post=post)
+
+
+
+
+
+######################### CREATE POST ############################
+@app.route('/create', methods=['GET', 'POST'])
+@login_required
+def create():
+    if request.method == 'POST':
+        db = get_db()
+        title = request.form['title']
+        body = request.form['body']
+        db.execute('INSERT INTO posts (title, body, author_id) VALUES (?, ?, ?)', (title, body, 1))
+        db.commit()
+        db.close()
+        return redirect(url_for('posts'))
+    return render_template('create.html')
+
+
+
+
+
+
+
+
+# ############################# REGISTER #############################
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == "POST":
+        username = request.form['username']
+        password = request.form['password']
+        email = request.form['email']
+        error = None
+
+        if not username:
+            error = "Username is require !"
+        if not password:
+            error = "Password is require !"
+        if not email:
+            error = "email is require !"
+
+        if error is None:
+            db = get_db()
+            try:
+                db.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)',
+                           (username, generate_password_hash(password), email))
+                db.commit()
+                return redirect(url_for('login'))
+            except sqlite3.IntegrityError:
+                error = 'this email is already used '
+            finally:
+                db.close()
+        flash(error)
+    return render_template('auth/register.html')
+
+
+
+#################### LOG IN ############################
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        error = None
+
+        if not email :
+            error = 'Email is required.'
+        elif not password :
+            error = 'Password is required.'
+        else:
+            db = get_db()
+            user = db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+            if not user :
+                error = 'Incorrect email.'
+            elif not check_password_hash(user['password'], password):
+                error = 'Incorrect password.'
+
+            if error is None:
+                session.clear()
+                session['user_id'] = user['id']
+                return redirect(url_for('posts'))
+        flash(error)
+
+    # If already logged in → skip login page
+    if g.user:
+        return redirect(url_for('posts'))
+
+    return render_template('auth/login.html')
+
+
+
+
+################ BEFORE REQUEST #######################
+@app.before_request
+def load_logged_in_user():
+    user_id = session.get('user_id')
+    if user_id == None :
+        g.user = None
+    else:
+        g.user = get_db().execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+
+
+
+
+################## LOG OUT ###################
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %} All articles {% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    {% if posts %}
+        <h2 class="text-center mb-4">All Articles</h2>
+    {% else %}
+        <h2 class="text-center">No Articles</h2>
+    {% endif %}
+
+    <div class="row">
+        {% for post in posts %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ post['title'] }}</h5>
+                    <p class="card-text">{{ post['body'] }}</p>
+                    <a href="post/{{ post['id'] }}" class="card-link">View</a>
+                    <a href="#" class="card-link">Another link</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

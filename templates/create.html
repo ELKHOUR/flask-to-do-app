@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+        {% block title %} create-articles {% endblock %}
+
+{% block content %}
+
+<form method="post" action="{{url_for('create')}}">
+  <div class="mb-3">
+    <label for="title" class="form-label">Title</label>
+    <input name="title" class="form-control" id="title">
+  </div>
+  <div class="mb-3">
+    <label for="body" class="form-label">Content</label>
+      <textarea name="body" class="form-control" id="body" rows="10"> </textarea>
+  </div>
+
+  <button type="submit" class="btn btn-outline-primary">Create</button>
+</form>
+
+{% endblock %}
