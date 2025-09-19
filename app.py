@@ -1,10 +1,16 @@
 import functools
-
+import os
 from flask import Flask, request, redirect, url_for, render_template, session, flash, g
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
 app.config.from_mapping(
     SECRET_KEY='MyNew$ecureP@ssw0rd', )
 
