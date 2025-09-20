@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
-        {% block title %} create-articles {% endblock %}
+        {% block title %} {{ 'update-article' if post else 'create-article'}} {% endblock %}
 
 {% block content %}
 
-<form method="post" action="{{url_for('create')}}">
+<form method="post" action="{{'/update/'~post['id'] if post else '/create' }}">
   <div class="mb-3">
     <label for="title" class="form-label">Title</label>
-    <input name="title" class="form-control" id="title">
+    <input name="title" class="form-control" id="title" value="{{post['title'] if post else ''}}">
   </div>
   <div class="mb-3">
     <label for="body" class="form-label">Content</label>
-      <textarea name="body" class="form-control" id="body" rows="10"> </textarea>
+      <textarea name="body" class="form-control" id="body" rows="10">{{post['body'] if post else ''}}</textarea>
   </div>
 
-  <button type="submit" class="btn btn-outline-primary">Create</button>
+  <button type="submit" class="btn btn-outline-primary">{{'Update' if post else 'Create'}}</button>
 </form>
 
 {% endblock %}

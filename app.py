@@ -1,6 +1,6 @@
 import functools
 import os
-from flask import Flask, request, redirect, url_for, render_template, session, flash, g
+from flask import Flask, request, redirect, url_for, render_template, session, flash, g, abort
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -73,7 +73,7 @@ def create():
         db = get_db()
         title = request.form['title']
         body = request.form['body']
-        db.execute('INSERT INTO posts (title, body, author_id) VALUES (?, ?, ?)', (title, body, 1))
+        db.execute('INSERT INTO posts (title, body, author_id) VALUES (?, ?, ?)', (title, body, g.user['id']))
         db.commit()
         db.close()
         return redirect(url_for('posts'))
@@ -81,7 +81,44 @@ def create():
 
 
 
+def get_post(id):
+    post = get_db().execute('SELECT * FROM posts WHERE id=?', (id,)).fetchone()
+    if post is None:
+        abort(404, 'Post not found')
+    if post['author_id'] != g.user['id']:
+        abort(403)
+    return post
 
+@app.route('/update/<int:id>', methods=['GET', 'POST'])
+@login_required
+def update(id):
+    post = get_post(id)
+    if request.method == 'POST':
+        title = request.form['title']
+        body = request.form['body']
+        error = None
+        if not title:
+            error = 'Title is required.'
+        if error is not None:
+            flash(error)
+        else:
+            db = get_db()
+            db.execute('UPDATE posts SET title = ?, body=? WHERE id = ?', (title,body, id))
+            db.commit()
+            db.close()
+            return redirect(url_for('posts'))
+    return render_template('create.html', post=post)
+
+
+
+@app.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete(id):
+    db = get_db()
+    db.execute('DELETE FROM posts WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    return redirect(url_for('posts'))
 
 
 

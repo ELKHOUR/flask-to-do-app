@@ -20,3 +20,9 @@ form{
     padding: 0.4rem 0.8rem; /* less padding */
     margin: 0.3rem 0;    /* smaller margin */
   }
+
+.no-decoration {
+    text-decoration: none;   /* removes underline */
+    color: inherit;          /* keeps the text color same as parent */
+    display: block;          /* makes the whole area clickable */
+}
