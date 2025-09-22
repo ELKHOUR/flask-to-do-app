@@ -3,8 +3,16 @@ import os
 from flask import Flask, request, redirect, url_for, render_template, session, flash, g, abort
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -13,6 +21,17 @@ if __name__ == "__main__":
 
 app.config.from_mapping(
     SECRET_KEY='MyNew$ecureP@ssw0rd', )
+
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'mahmoud.reda45667@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wrxm ybds cgmp znjj'
+app.config['MAIL_DEFAULT_SENDER'] = 'mahmoud.reda45667@gmail.com'
+
+mail = Mail(app)
+s = URLSafeTimedSerializer(app.secret_key)  # For generating secure tokens
 
 if __name__ == '__main__':
     app.run()
@@ -186,6 +205,84 @@ def login():
         return redirect(url_for('posts'))
 
     return render_template('auth/login.html')
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        db = get_db()
+        user = db.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+
+        if user:
+            # Generate reset token
+            token = s.dumps(email, salt='password-reset-salt')
+            reset_url = url_for('reset_password', token=token, _external=True)
+
+            # Send email
+            msg = Message('Password Reset Request', recipients=[email])
+            msg.body = f'Click the link to reset your password: {reset_url}'
+            mail.send(msg)
+
+            flash('Check your email for the password reset link.')
+            return redirect(url_for('login'))
+        else:
+            flash('No account found with that email.')
+
+    return render_template('auth/forgot_password.html')
+
+
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)  # 1 hour expiry
+    except:
+        flash('The reset link is invalid or has expired.')
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        new_password = request.form['password']
+        db = get_db()
+        db.execute(
+            'UPDATE users SET password = ? WHERE email = ?',
+            (generate_password_hash(new_password), email)
+        )
+        db.commit()
+
+        flash('Your password has been reset! You can log in now.')
+        return redirect(url_for('login'))
+
+    return render_template('auth/reset_password.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

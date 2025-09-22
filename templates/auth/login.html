@@ -23,7 +23,11 @@
         <div class="alert alert-danger"> {{message}} </div>
       {% endfor %}
   </div>
-  <button type="submit" class="btn btn-outline-primary mt-5">Log in</button>
+
+<div class="d-flex justify-content-between mt-4">
+    <button type="submit" class="btn btn-outline-primary">Log in</button>
+    <a href="{{ url_for('forgot_password') }}" class="btn btn-link text-decoration-none">Forgot Password?</a>
+</div>
 </form>
 
 
